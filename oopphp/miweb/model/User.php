@@ -1,13 +1,13 @@
 <?php
 class User extends Connection{
 
-    protected function setUser($username, $password, $email){
+    protected function setUser($username, $password, $email, $token){
         $error = false;
-        $stmt = $this->connect()->prepare("INSERT INTO users (username, password, email) VALUES (?,?,?)");
+        $stmt = $this->connect()->prepare("INSERT INTO users (username, password, email, token) VALUES (?,?,?,?)");
 
         $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
 
-        if(!$stmt->execute(array($username, $hashedPwd, $email))){
+        if(!$stmt->execute(array($username, $hashedPwd, $email,$token))){
             $error = true;
         }
         $stmt = null;
@@ -33,9 +33,9 @@ class User extends Connection{
 
     protected function verifyLoginUser($username, $password){
         $error = 0;
-        $stmt = $this->connect()->prepare("SELECT password from users WHERE username = ?");
-
-        if(!$stmt->execute(array($username))){
+        $stmt = $this->connect()->prepare("SELECT password from users WHERE username = ? and status=?");
+        $status = 1;
+        if(!$stmt->execute(array($username, $status))){
             $error = 1;
         }
 
@@ -73,6 +73,18 @@ class User extends Connection{
         
         $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
         if(!$stmt->execute(array($hashedPwd, $token))){
+           $error = true;   
+        }
+
+        $stmt = null;
+        return $error;
+    }
+
+    protected function setStatus($token){
+        $error = false;
+        $stmt = $this->connect()->prepare("UPDATE users set status= ?, token=null, created_at=null where token = ?");
+        $status = 1;
+        if(!$stmt->execute(array($status, $token))){
            $error = true;   
         }
 
