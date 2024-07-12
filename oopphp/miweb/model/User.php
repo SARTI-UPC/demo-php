@@ -42,12 +42,11 @@ class User extends Connection{
         if($stmt->rowCount()>0){
             $res = $stmt->fetchAll();
             $hashedPwd = $res[0]['password'];
-
-            $_SESSION["username"] = $username;
-         
-            if(password_verify($password, $hashedPwd)){
+            if(password_verify($password, $hashedPwd)==false){
                 $error = 2;
-            }
+            }else{
+                $_SESSION["username"] = $username;
+            }  
         }else{
             $error = 2;
         }
@@ -56,7 +55,7 @@ class User extends Connection{
 
     }
 
-    protected function setToken($token, $email){
+    protected function setTokenUser($token, $email){
         $error = false;
         $stmt = $this->connect()->prepare("UPDATE users set token= ? where email = ?");
         
@@ -64,6 +63,19 @@ class User extends Connection{
            $error = true;
             
         }
+        $stmt = null;
+        return $error;
+    }
+
+    protected function setNewPassword($token, $password){
+        $error = false;
+        $stmt = $this->connect()->prepare("UPDATE users set password= ?, token=null, created_at=null where token = ?");
+        
+        $hashedPwd = password_hash($password, PASSWORD_DEFAULT);
+        if(!$stmt->execute(array($hashedPwd, $token))){
+           $error = true;   
+        }
+
         $stmt = null;
         return $error;
     }
@@ -83,5 +95,35 @@ class User extends Connection{
         return $resultCheck;
     }
 
+    protected function checkToken($token){
+        $stmt = $this->connect()->prepare("SELECT username FROM users WHERE token = ?;");
+        if(!$stmt->execute(array($token))){
+            $stmt = null;
+            header("Location: ../view/newpassword.php?error=stmtfailed");
+            exit();
+        }
+        $resultCheck = false;
+        if($stmt->rowCount()>0){
+            $resultCheck = true;
+        }
+
+        return $resultCheck;
+    }
+
+    protected function checkTokenExpired($token){
+        $stmt = $this->connect()->prepare("SELECT timestampdiff(MINUTE, created_at, now())as diff FROM users WHERE token = ?;");
+        if(!$stmt->execute(array($token))){
+            $stmt = null;
+            header("Location: ../view/newpassword.php?error=stmtfailed");
+            exit();
+        }
+        $diff = -1;
+        if($stmt->rowCount()>0){
+            $res = $stmt->fetchAll();
+            $diff = $res[0]['diff'];
+        }
+
+        return $diff;
+    }
 
 }
