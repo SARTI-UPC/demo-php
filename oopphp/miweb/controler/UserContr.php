@@ -5,7 +5,7 @@ class UserContr extends User{
     private $password;
     private $repeatPwd;
     private $email;
-    private $rememberme;
+    private $token;
 
     public function __construct($username="", $password ="", $repeatPwd="", $email=""){
         $this->username = $username;
@@ -43,11 +43,11 @@ class UserContr extends User{
        return $this->email;
     }
     
-    public function setRememberme($rememberme){
-        $this->rememberme = $rememberme;
+    public function setToken($token){
+        $this->token = $token;
     }
-    public function getRememberme(){
-       return $this->rememberme;
+    public function getToken(){
+       return $this->token;
     }
     /*** */
 
@@ -101,8 +101,9 @@ class UserContr extends User{
             header("Location: ../view/forgotpassword.php?error=emailnotFound");
             exit();
         }
+
         $token = $this->generateToken();
-        if($this->setToken($token, $this->email)){
+        if($this->setTokenUser($token, $this->email)){
             header("Location: ../view/forgotpassword.php?error=failedStmt");
             exit(); 
         }
@@ -111,12 +112,44 @@ class UserContr extends User{
     
     }
 
+    public function newPassword(){
+        if($this->emptyInput($this->password) == false || $this->emptyInput($this->repeatPwd) == false){
+            header("Location: ../view/newpassword.php?error=emptyInput&token=$this->token");
+            exit();
+        }
+        if($this->pwdMatch() == false){
+            header("Location: ../view/newpassword.php?error=PasswordNotMatch&token=$this->token");
+            exit();
+        }
+        if($this->checkToken($this->token) == false){
+            header("Location: ../view/newpassword.php?error=tokenNotExisted");
+            exit();
+        }
+        if($this->checkTokenExpired($this->token)>30){
+            header("Location: ../view/newpassword.php?error=tokenExpired");
+            exit();
+        }        
+        if($this->setNewPassword($this->token, $this->password)){
+            header("Location: ../view/newpassword.php?error=failedStmt&token=$this->token");
+            exit();
+        }
+
+    }
+
     /**** */
 
     private function emptyInput($input){
         $result = true;
 
         if(empty($input)){
+            $result = false;
+        }
+        return $result;
+    }
+
+    private function pwdMatch(){
+        $result = true;
+        if($this->password !== $this->repeatPwd){
             $result = false;
         }
         return $result;
