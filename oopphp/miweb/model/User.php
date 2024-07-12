@@ -56,4 +56,32 @@ class User extends Connection{
 
     }
 
+    protected function setToken($token, $email){
+        $error = false;
+        $stmt = $this->connect()->prepare("UPDATE users set token= ? where email = ?");
+        
+        if(!$stmt->execute(array($token, $email))){
+           $error = true;
+            
+        }
+        $stmt = null;
+        return $error;
+    }
+
+    protected function checkUserByEmail($email){
+        $stmt = $this->connect()->prepare("SELECT username FROM users WHERE email = ?;");
+        if(!$stmt->execute(array($email))){
+            $stmt = null;
+            header("Location: ../views/forgotpassword.php?error=stmtfailed");
+            exit();
+        }
+        $resultCheck = false;
+        if($stmt->rowCount()>0){
+            $resultCheck = true;
+        }
+
+        return $resultCheck;
+    }
+
+
 }
