@@ -68,9 +68,17 @@ class UserContr extends User{
         }
 
         //setUser to DB
-        if($this->setUser($this->username, $this->password, $this->email)){
+        
+        $token = $this->generateToken();
+        if($this->setUser($this->username, $this->password, $this->email, $token)){
             header("Location: ../view/signup.html?error=FailedStmt");
         }
+
+        //enviar correo de activacion
+        $this->sendEmailActivacio($token);
+
+        
+
     }
 
     public function loginUser(){
@@ -131,6 +139,23 @@ class UserContr extends User{
         }        
         if($this->setNewPassword($this->token, $this->password)){
             header("Location: ../view/newpassword.php?error=failedStmt&token=$this->token");
+            exit();
+        }
+
+    }
+
+    public function activateAccount(){
+     
+        if($this->checkToken($this->token) == false){
+            header("Location: ../includes/activacio.php?error=tokenNotExisted");
+            exit();
+        }
+        if($this->checkTokenExpired($this->token)>30){
+            header("Location: ../includes/activacio.php?error=tokenExpired");
+            exit();
+        }        
+        if($this->setStatus($this->token)){
+            header("Location: ../includes/activacio.php?error=failedStmt&token=$this->token");
             exit();
         }
 
@@ -216,6 +241,61 @@ class UserContr extends User{
         } else {
             header("Location: ../view/forgotpassword.php?msg=Message sent!");
             exit();
+         
+        }
+    }
+
+    private function sendEmailActivacio($token){
+        
+        require '../lib/PHPMailer/src/Exception.php';
+        require '../lib/PHPMailer/src/PHPMailer.php';
+        require '../lib/PHPMailer/src/SMTP.php';
+        
+        //Create a new PHPMailer instance
+        $mail = new PHPMailer\PHPMailer\PHPMailer();
+        
+        //Tell PHPMailer to use SMTP
+        $mail->isSMTP();
+        
+        //Enable SMTP debugging
+        $mail->SMTPDebug = PHPMailer\PHPMailer\SMTP::DEBUG_OFF;
+        
+        //Set the hostname of the mail server
+        $mail->Host = 'smtp.gmail.com';
+        
+        //Set the SMTP port number:
+        $mail->Port = 465;
+        
+        //Set the encryption mechanism to use:
+        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+        
+        //Whether to use SMTP authentication
+        $mail->SMTPAuth = true;
+        
+        //Username to use for SMTP authentication - use full email address for gmail
+        $mail->Username = 'foap408@gmail.com';
+        
+        //Password to use for SMTP authentication
+        $mail->Password = 'dyrv alyq ojiq acyd';
+        
+        //Set who the message is to be sent to
+        $mail->addAddress($this->email);
+        
+        //Set the subject line
+        $mail->Subject = 'New Password';
+        
+        //Replace the plain text body with one created manually
+        $mail->msgHTML("<a href='http://localhost/Sites/Foap2023/demo-php/oopphp/miweb/includes/activacio.php?token=$token'>activa Tu cuenta</a>");
+        
+
+        //send the message, check for errors
+        if (!$mail->send()) {
+           // echo 'Mailer Error: ' . $mail->ErrorInfo;
+            header("Location: ../view/signup.html?error=Mailer Error");
+            exit();
+        } else {
+            //header("Location: ../view/activacio.php?msg=Message sent!");
+            //exit();
          
         }
     }
