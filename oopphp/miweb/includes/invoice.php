@@ -43,8 +43,9 @@
   <?php ?>
   <table width="100%">
     <tr>
-        <td><strong>From:</strong> <?php echo $res[0]['nom_empleat'];?></td>
-        <td><strong>To:</strong> <?php echo $res[0]['nom_client'];?></td>
+      <td><strong>Nº Comanda:</strong> <?php echo $numComanda;?></td>
+      <td><strong>From:</strong> <?php echo $res[0]['nom_empleat'];?></td>
+      <td><strong>To:</strong> <?php echo $res[0]['nom_client'];?></td>
     </tr>
 
   </table>
